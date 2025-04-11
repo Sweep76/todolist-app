@@ -1,9 +1,10 @@
 // screens/LoginScreen.tsx
 import React, { useState } from 'react'
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native'
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../navigation/AppNavigator'
+import styles from '../styles/LoginScreenStyle' 
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
 
@@ -41,7 +42,10 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+     {/* Add the Image */}
+     <Image source={require("../assets/images/login-background.png")} style={styles.image} />
+     <Text style={styles.title}>Welcome Back!</Text>
+      <Text style={styles.description}>You got things to do</Text>
 
       <TextInput
         placeholder="Email Address"
@@ -57,39 +61,16 @@ export default function LoginScreen({ navigation }: Props) {
         secureTextEntry
         onChangeText={setPassword}
       />
-
-      <Button title={loading ? 'Logging in...' : 'Log In'} onPress={handleLogin} />
-
-      <Text style={styles.link} onPress={() => navigation.navigate('Register')}>
-        Don't have an account? Sign Up
-      </Text>
+    
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.signupbutton} onPress={() => navigation.navigate("Register")}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
     </View>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  link: {
-    marginTop: 20,
-    textAlign: 'center',
-    color: 'blue',
-    textDecorationLine: 'underline',
-  },
-})
+

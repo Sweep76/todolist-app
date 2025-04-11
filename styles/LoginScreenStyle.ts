@@ -1,7 +1,7 @@
 // styles/RegisterScreenStyles.ts
 import { StyleSheet } from 'react-native'
 
-const RegisterScreenStyles = StyleSheet.create({
+const LoginScreenStyles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
@@ -10,17 +10,21 @@ const RegisterScreenStyles = StyleSheet.create({
         paddingHorizontal: 25,
       },
       image: {
-        width: 200,  // Adjust the width
-        height: 200, // Adjust the height
+        width: 150,  // Adjust size as needed
+        height: 150,
         marginBottom: 20, // Space between image and text
-        resizeMode: "contain",
       },
       title: {
         fontSize: 30,
         fontWeight: "700",
         color: "#222",
-        marginBottom: 25,
+        marginBottom: 10,
         letterSpacing: 0.8,
+      },
+      description: {
+        fontSize: 20,
+        color: "#222",
+        marginBottom: 50,
       },
       input: {
         width: "100%",
@@ -42,11 +46,25 @@ const RegisterScreenStyles = StyleSheet.create({
         borderRadius: 25,
         marginTop: 10,
       },
+      signupbutton: {
+        backgroundColor: "#007bff",
+        width: "100%",
+        height: 50,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 25,
+        marginTop: 10,
+      },
       buttonText: {
         color: "#fff",
         fontSize: 18,
         fontWeight: "bold",
-        letterSpacing: 0.5,
+      },
+      forgotPassword: {
+        marginTop: 15,
+        color: "#007bff",
+        fontSize: 14,
+        fontWeight: "500",
       },
       signupContainer: {
         flexDirection: "row",
@@ -62,6 +80,11 @@ const RegisterScreenStyles = StyleSheet.create({
         fontWeight: "bold",
         marginLeft: 5,
       },
+      backgroundImage: {
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+      },
   })
 
-  export default RegisterScreenStyles
+  export default LoginScreenStyles

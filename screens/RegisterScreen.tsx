@@ -1,7 +1,7 @@
 // screens/RegisterScreen.tsx
 import styles from '../styles/RegisterScreenStyle'
 import React, { useEffect, useState } from 'react'
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native'
+import { View, Text, TextInput, Button, StyleSheet, Alert, Image, TouchableOpacity} from 'react-native'
 import { supabase } from '../lib/supabase'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../navigation/AppNavigator'
@@ -66,6 +66,8 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+    {/* Add Image */}
+      <Image source={require("../assets/images/signup-logo.png")} style={styles.image} />
       <Text style={styles.title}>Create Account</Text>
 
       <TextInput
@@ -95,12 +97,17 @@ export default function RegisterScreen({ navigation }: Props) {
         secureTextEntry
         onChangeText={setConfirmPassword}
       />
-
-      <Button title={loading ? 'Signing up...' : 'Sign Up'} onPress={handleSignUp} />
+        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
       
-      <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-        Already have an account? Log In
-      </Text>
+      
+      <View style={styles.signupContainer}>
+        <Text style={styles.signupText}>Already have an account?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.signupLink}> Login</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   )
 }
