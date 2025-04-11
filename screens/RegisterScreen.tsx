@@ -1,7 +1,14 @@
 // screens/RegisterScreen.tsx
 import styles from '../styles/RegisterScreenStyle'
 import React, { useEffect, useState } from 'react'
-import { View, Text, TextInput, Button, StyleSheet, Alert, Image, TouchableOpacity} from 'react-native'
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  Image,
+  TouchableOpacity,
+} from 'react-native'
 import { supabase } from '../lib/supabase'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../navigation/AppNavigator'
@@ -19,7 +26,6 @@ export default function RegisterScreen({ navigation }: Props) {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser()
       if (data.user) {
-        // User is logged in, navigate to the Login screen
         navigation.navigate('Login')
       }
     }
@@ -40,34 +46,50 @@ export default function RegisterScreen({ navigation }: Props) {
 
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName, // this goes into the `profiles` table if you created it
-        },
-      },
     })
 
-    setLoading(false)
+    if (signUpError) {
+      setLoading(false)
+      Alert.alert('Signup Error', signUpError.message)
+      return
+    }
 
-    if (error) {
-      Alert.alert('Signup Error', error.message)
-    } else {
+    const user = signUpData.user
+
+    if (user) {
+      // Insert into profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{ id: user.id, full_name: fullName }])
+
+      setLoading(false)
+
+      if (profileError) {
+        Alert.alert('Profile Error', profileError.message)
+        return
+      }
+
       Alert.alert('Success', 'Account created!', [
         {
           text: 'OK',
           onPress: () => navigation.navigate('Login'),
         },
       ])
+    } else {
+      setLoading(false)
+      Alert.alert('Error', 'User not found after sign up.')
     }
   }
 
   return (
     <View style={styles.container}>
-    {/* Add Image */}
-      <Image source={require("../assets/images/signup-logo.png")} style={styles.image} />
+      <Image
+        source={require('../assets/images/signup-logo.png')}
+        style={styles.image}
+      />
       <Text style={styles.title}>Create Account</Text>
 
       <TextInput
@@ -97,14 +119,14 @@ export default function RegisterScreen({ navigation }: Props) {
         secureTextEntry
         onChangeText={setConfirmPassword}
       />
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
-      
-      
+
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
+      </TouchableOpacity>
+
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Already have an account?</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.signupLink}> Login</Text>
         </TouchableOpacity>
       </View>

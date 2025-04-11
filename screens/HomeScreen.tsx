@@ -4,7 +4,6 @@ import {
   View,
   Text,
   Button,
-  StyleSheet,
   FlatList,
   Alert,
   TextInput,
@@ -25,19 +24,36 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 export default function HomeScreen({ navigation }: Props) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-
   const [taskName, setTaskName] = useState('')
   const [taskDetails, setTaskDetails] = useState('')
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string | null>(null)
 
   useEffect(() => {
+    fetchUserDisplayName()
     fetchTasks()
   }, [])
 
+  const fetchUserDisplayName = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+  
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+  
+    if (error) {
+      Alert.alert('Error fetching user display name', error.message)
+    } else {
+      setDisplayName(data?.full_name)
+    }
+  }
+  
+
   const fetchTasks = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     const { data, error } = await supabase
@@ -64,9 +80,7 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   const handleAddOrUpdateTask = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     if (!taskName.trim()) {
@@ -137,6 +151,19 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }
 
+  const handleToggleComplete = async (task: Task) => {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ is_completed: !task.is_completed })
+      .eq('id', task.id)
+
+    if (error) {
+      Alert.alert('Error updating status', error.message)
+    } else {
+      fetchTasks()
+    }
+  }
+
   const renderTask = ({ item }: { item: Task }) => (
     <View style={styles.taskContainer}>
       <Text style={styles.taskName}>{item.task_name}</Text>
@@ -144,6 +171,10 @@ export default function HomeScreen({ navigation }: Props) {
       <Text>Status: {item.is_completed ? 'Completed' : 'Pending'}</Text>
 
       <View style={styles.buttonRow}>
+        <Button
+          title={item.is_completed ? 'Mark as Pending' : 'Mark as Complete'}
+          onPress={() => handleToggleComplete(item)}
+        />
         <Button title="Edit" onPress={() => handleEditTask(item)} />
         <Button
           title="Delete"
@@ -156,9 +187,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Tasks</Text>
+      <Text style={styles.title}>Welcome, {displayName || 'User'}!</Text>
       <Button title="Log Out" onPress={handleLogout} />
-
       <View style={styles.form}>
         <TextInput
           placeholder="Task Name"
@@ -193,4 +223,3 @@ export default function HomeScreen({ navigation }: Props) {
     </View>
   )
 }
-

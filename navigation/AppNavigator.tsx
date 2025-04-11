@@ -8,6 +8,7 @@ import RegisterScreen from '../screens/RegisterScreen'
 import HomeScreen from '../screens/HomeScreen'
 import EditTaskScreen from '../screens/EditTaskScreen'
 
+
 // Task type (shared with HomeScreen)
 export type Task = {
   id: string
