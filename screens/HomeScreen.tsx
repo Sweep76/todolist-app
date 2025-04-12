@@ -1,21 +1,21 @@
-import styles from '../styles/HomeScreenStyle'
 import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
-  Button,
-  FlatList,
   Alert,
   TextInput,
+  FlatList,
+  Modal,
+  TouchableOpacity,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useIsFocused } from '@react-navigation/native'
 import { CompositeScreenProps } from '@react-navigation/native'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { TabParamList, RootStackParamList } from '../navigation/AppNavigator' // adjust the import path
-import { fetchUserDisplayName } from '../lib/user'
-import { useIsFocused } from '@react-navigation/native'; // Import the hook for focus
-
+import { TabParamList, RootStackParamList } from '../navigation/AppNavigator'
+import styles from '../styles/HomeScreenStyle'
 
 type Task = {
   id: string
@@ -29,8 +29,6 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >
 
-
-
 export default function HomeScreen({ navigation }: Props) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +36,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [taskDetails, setTaskDetails] = useState('')
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
+  const isFocused = useIsFocused()
   const incompleteTasks = tasks.filter(task => !task.is_completed)
 
   useEffect(() => {
@@ -45,60 +45,40 @@ export default function HomeScreen({ navigation }: Props) {
       await fetchUserDisplayName()
       await fetchTasks()
     }
-  
     loadData()
   }, [])
-  
-  const isFocused = useIsFocused(); // Hook to detect if screen is focused
 
-  // Use another useEffect to trigger refresh when HomeScreen is focused
   useEffect(() => {
-    if (isFocused) {
-      fetchTasks(); // Trigger the fetch whenever screen comes into focus
-    }
-  }, [isFocused]); // 
+    if (isFocused) fetchTasks()
+  }, [isFocused])
+
   const fetchUserDisplayName = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-  
     const { data, error } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
       .single()
-  
-    if (error) {
-      Alert.alert('Error fetching user display name', error.message)
-    } else {
-      setDisplayName(data?.full_name)
-    }
+    if (error) Alert.alert('Error fetching user name', error.message)
+    else setDisplayName(data?.full_name)
   }
-  
 
   const fetchTasks = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
       .eq('user_id', user.id)
-
-    if (error) {
-      Alert.alert('Error fetching tasks', error.message)
-    } else {
-      setTasks(data)
-    }
-
+    if (error) Alert.alert('Error fetching tasks', error.message)
+    else setTasks(data)
     setLoading(false)
   }
-
-  
 
   const handleAddOrUpdateTask = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     if (!taskName.trim()) {
       Alert.alert('Missing fields', 'Please enter a task name.')
       return
@@ -109,30 +89,19 @@ export default function HomeScreen({ navigation }: Props) {
         .from('tasks')
         .update({ task_name: taskName, task_details: taskDetails })
         .eq('id', editingTaskId)
-
-      if (error) {
-        Alert.alert('Error updating task', error.message)
-      } else {
-        resetForm()
-        fetchTasks()
-      }
+      if (error) Alert.alert('Update error', error.message)
     } else {
-      const { error } = await supabase.from('tasks').insert([
-        {
-          user_id: user.id,
-          task_name: taskName,
-          task_details: taskDetails,
-          is_completed: false,
-        },
-      ])
-
-      if (error) {
-        Alert.alert('Error adding task', error.message)
-      } else {
-        resetForm()
-        fetchTasks()
-      }
+      const { error } = await supabase.from('tasks').insert([{
+        user_id: user.id,
+        task_name: taskName,
+        task_details: taskDetails,
+        is_completed: false,
+      }])
+      if (error) Alert.alert('Add error', error.message)
     }
+    resetForm()
+    fetchTasks()
+    setModalVisible(false)
   }
 
   const resetForm = () => {
@@ -145,26 +114,20 @@ export default function HomeScreen({ navigation }: Props) {
     setTaskName(task.task_name)
     setTaskDetails(task.task_details || '')
     setEditingTaskId(task.id)
+    setModalVisible(true)
   }
 
   const confirmDeleteTask = (id: string) => {
-    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
+    Alert.alert('Delete Task', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => handleDeleteTask(id),
-      },
+      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteTask(id) },
     ])
   }
 
   const handleDeleteTask = async (id: string) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
-    if (error) {
-      Alert.alert('Delete Error', error.message)
-    } else {
-      fetchTasks()
-    }
+    if (error) Alert.alert('Delete Error', error.message)
+    else fetchTasks()
   }
 
   const handleToggleComplete = async (task: Task) => {
@@ -172,31 +135,33 @@ export default function HomeScreen({ navigation }: Props) {
       .from('tasks')
       .update({ is_completed: !task.is_completed })
       .eq('id', task.id)
-
-    if (error) {
-      Alert.alert('Error updating status', error.message)
-    } else {
-      fetchTasks()
-    }
+    if (error) Alert.alert('Status error', error.message)
+    else fetchTasks()
   }
 
   const renderTask = ({ item }: { item: Task }) => (
     <View style={styles.taskContainer}>
-      <Text style={styles.taskName}>{item.task_name}</Text>
-      <Text style={styles.taskDetails}>{item.task_details}</Text>
-      <Text>Status: {item.is_completed ? 'Completed' : 'Pending'}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.taskName}>{item.task_name}</Text>
+        <Text style={styles.taskDetails}>{item.task_details}</Text>
+        <Text>Status: {item.is_completed ? '✅ Completed' : '⌛ Pending'}</Text>
+      </View>
+      <View style={styles.iconGroup}>
+      <TouchableOpacity onPress={() => confirmDeleteTask(item.id)}>
+          <Ionicons name="trash-outline" size={24} color="red" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => handleEditTask(item)}>
+          <Ionicons name="create-outline" size={24} color="blue" />
+        </TouchableOpacity>
 
-      <View style={styles.buttonRow}>
-        <Button
-          title={item.is_completed ? 'Mark as Pending' : 'Mark as Complete'}
-          onPress={() => handleToggleComplete(item)}
-        />
-        <Button title="Edit" onPress={() => handleEditTask(item)} />
-        <Button
-          title="Delete"
-          color="red"
-          onPress={() => confirmDeleteTask(item.id)}
-        />
+        <TouchableOpacity onPress={() => handleToggleComplete(item)}>
+          <Ionicons
+            name={item.is_completed ? 'arrow-undo' : 'checkbox-outline'}
+            size={24}
+            color="green"
+          />
+        </TouchableOpacity>
       </View>
     </View>
   )
@@ -204,27 +169,6 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome, {displayName || 'User'}!</Text>
-      <View style={styles.form}>
-        <TextInput
-          placeholder="Task Name"
-          style={styles.input}
-          value={taskName}
-          onChangeText={setTaskName}
-        />
-        <TextInput
-          placeholder="Task Details"
-          style={styles.input}
-          value={taskDetails}
-          onChangeText={setTaskDetails}
-        />
-        <Button
-          title={editingTaskId ? 'Save Changes' : 'Add Task'}
-          onPress={handleAddOrUpdateTask}
-        />
-        {editingTaskId && (
-          <Button title="Cancel Edit" color="gray" onPress={resetForm} />
-        )}
-      </View>
 
       {loading ? (
         <Text>Loading tasks...</Text>
@@ -235,6 +179,58 @@ export default function HomeScreen({ navigation }: Props) {
           keyExtractor={(item) => item.id}
         />
       )}
+
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          resetForm()
+          setModalVisible(false)
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editingTaskId ? 'Edit Task' : 'New Task'}
+            </Text>
+            <TextInput
+              placeholder="Task Name"
+              style={styles.input}
+              value={taskName}
+              onChangeText={setTaskName}
+            />
+            <TextInput
+              placeholder="Task Details"
+              style={styles.input}
+              value={taskDetails}
+              onChangeText={setTaskDetails}
+            />
+            <View style={styles.modalButtonGroup}>
+              <TouchableOpacity style={styles.confirmButton} onPress={handleAddOrUpdateTask}>
+                <Text style={styles.buttonText}>Confirm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  resetForm()
+                  setModalVisible(false)
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
