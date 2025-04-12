@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }: Props) {
       Alert.alert('Success', 'Logged in successfully!', [
         {
           text: 'OK',
-          onPress: () => navigation.replace('Home'), // Navigate to Home after successful login
+          onPress: () => navigation.replace('MainTabs'), // Navigate to Home after successful login
         },
       ])
     }

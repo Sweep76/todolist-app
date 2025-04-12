@@ -9,8 +9,13 @@ import {
   TextInput,
 } from 'react-native'
 import { supabase } from '../lib/supabase'
+import { CompositeScreenProps } from '@react-navigation/native'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { RootStackParamList } from '../navigation/AppNavigator'
+import { TabParamList, RootStackParamList } from '../navigation/AppNavigator' // adjust the import path
+import { fetchUserDisplayName } from '../lib/user'
+import { useIsFocused } from '@react-navigation/native'; // Import the hook for focus
+
 
 type Task = {
   id: string
@@ -19,7 +24,12 @@ type Task = {
   is_completed: boolean
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>
+
+
 
 export default function HomeScreen({ navigation }: Props) {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -28,12 +38,25 @@ export default function HomeScreen({ navigation }: Props) {
   const [taskDetails, setTaskDetails] = useState('')
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const incompleteTasks = tasks.filter(task => !task.is_completed)
 
   useEffect(() => {
-    fetchUserDisplayName()
-    fetchTasks()
+    const loadData = async () => {
+      await fetchUserDisplayName()
+      await fetchTasks()
+    }
+  
+    loadData()
   }, [])
+  
+  const isFocused = useIsFocused(); // Hook to detect if screen is focused
 
+  // Use another useEffect to trigger refresh when HomeScreen is focused
+  useEffect(() => {
+    if (isFocused) {
+      fetchTasks(); // Trigger the fetch whenever screen comes into focus
+    }
+  }, [isFocused]); // 
   const fetchUserDisplayName = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -70,14 +93,7 @@ export default function HomeScreen({ navigation }: Props) {
     setLoading(false)
   }
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      Alert.alert('Logout error', error.message)
-    } else {
-      navigation.replace('Login')
-    }
-  }
+  
 
   const handleAddOrUpdateTask = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -188,7 +204,6 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome, {displayName || 'User'}!</Text>
-      <Button title="Log Out" onPress={handleLogout} />
       <View style={styles.form}>
         <TextInput
           placeholder="Task Name"
@@ -215,7 +230,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Text>Loading tasks...</Text>
       ) : (
         <FlatList
-          data={tasks}
+          data={incompleteTasks}
           renderItem={renderTask}
           keyExtractor={(item) => item.id}
         />
