@@ -16,6 +16,8 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { TabParamList, RootStackParamList } from '../navigation/AppNavigator'
 import styles from '../styles/HomeScreenStyle'
+import { BackHandler, ToastAndroid, Platform } from 'react-native'
+
 
 type Task = {
   id: string
@@ -47,6 +49,43 @@ export default function HomeScreen({ navigation }: Props) {
     }
     loadData()
   }, [])
+
+  
+  useEffect(() => {
+    let backPressedOnce = false;
+  
+    const onBackPress = () => {
+      // If on the home screen, prompt the user to press back again to exit
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+        return true; // Prevent default back behavior
+      }
+  
+      if (backPressedOnce) {
+        BackHandler.exitApp();
+        return true;
+      }
+  
+      backPressedOnce = true;
+      ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+  
+      setTimeout(() => {
+        backPressedOnce = false;
+      }, 2000);
+  
+      return true;
+    };
+  
+    if (Platform.OS === 'android') {
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    }
+  
+    return () => {
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      }
+    };
+  }, [navigation]);
 
   useEffect(() => {
     if (isFocused) fetchTasks()

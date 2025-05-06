@@ -62,15 +62,15 @@ function MainTabs() {
   )
 }
 
+
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
-      <RootStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-        <RootStack.Screen name="Login" component={LoginScreen} />
-        <RootStack.Screen name="Register" component={RegisterScreen} />
-        <RootStack.Screen name="MainTabs" component={MainTabs} />
-        <RootStack.Screen name="EditTask" component={EditTaskScreen} />
-      </RootStack.Navigator>
-    </NavigationContainer>
+    <RootStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Login" component={LoginScreen} />
+      <RootStack.Screen name="Register" component={RegisterScreen} />
+      <RootStack.Screen name="MainTabs" component={MainTabs} />
+      <RootStack.Screen name="EditTask" component={EditTaskScreen} />
+    </RootStack.Navigator>
   )
 }
+
