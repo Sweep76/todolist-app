@@ -1,27 +1,30 @@
-// App.tsx
-import AppNavigator from './navigation/AppNavigator'
 import React, { useEffect, useState } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { supabase } from './lib/supabase'
-import AuthNavigator from './navigation/AuthNavigator'
-import { View, ActivityIndicator } from 'react-native'
-import { Session } from '@supabase/supabase-js' // ✅ Import Session type
+import AuthNavigator from './/navigation/AuthNavigator'
+import AppNavigator from './/navigation/AppNavigator'
+import { ActivityIndicator, View } from 'react-native'
+import { Session } from '@supabase/supabase-js'
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null) // ✅ Correctly typed
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState('')
+const [password, setPassword] = useState('')
+
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+    // Use auth state change listener as the single source of truth
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', session)
       setSession(session)
       setLoading(false)
-    }
+    })
 
-    checkSession()
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // On first load, manually get session to trigger the above
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      setLoading(false)
     })
 
     return () => {

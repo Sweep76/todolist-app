@@ -4,9 +4,6 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons' // or any icon lib you prefer
 
-// Screens
-import LoginScreen from '../screens/LoginScreen'
-import RegisterScreen from '../screens/RegisterScreen'
 import HomeScreen from '../screens/HomeScreen'
 import EditTaskScreen from '../screens/EditTaskScreen'
 import CompletedScreen from '../screens/CompletedScreen'
@@ -65,9 +62,7 @@ function MainTabs() {
 
 export default function AppNavigator() {
   return (
-    <RootStack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-      <RootStack.Screen name="Login" component={LoginScreen} />
-      <RootStack.Screen name="Register" component={RegisterScreen} />
+    <RootStack.Navigator initialRouteName="MainTabs" screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="MainTabs" component={MainTabs} />
       <RootStack.Screen name="EditTask" component={EditTaskScreen} />
     </RootStack.Navigator>
